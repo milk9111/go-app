@@ -2,5 +2,14 @@
 	"ImportPath": "github.com/milk9111/go-app",
 	"GoVersion": "go1.10",
 	"GodepVersion": "v80",
-	"Deps": []
+	"Deps": [
+		{
+			"ImportPath": "golang.org/x/net/html",
+			"Rev": "c0dbc17a35534bf2e581d7a942408dc936316da4"
+		},
+		{
+			"ImportPath": "golang.org/x/net/html/atom",
+			"Rev": "c0dbc17a35534bf2e581d7a942408dc936316da4"
+		}
+	]
 }

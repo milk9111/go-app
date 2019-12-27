@@ -3,30 +3,56 @@ package main
 import (
 	"net/http"
 	"fmt"
-	"time"
 	"html/template"
 	"log"
 	"os"
 )
 
-type RadioButton struct {
+type ListOption struct {
 	Name 	string
 	Value 	string
-	IsDisabled 	bool
-	IsChecked 	bool
-	Text 	string
+	Selected bool
+}
+
+type TagCount struct {
+	Label string
+	Count int
 }
 
 type PageVariables struct {
-	Date 	string
-	Time 	string
-	PageTitle 	string
-	PageRadioButtons []RadioButton
-	Answer 	string
+	Date            string
+	Time            string
+	PageTitle       string
+	PageListOptions []ListOption
+	SubjectUrl      string
+	Tag				TagCount
 }
 
-func helloWorld(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello World!\n")
+var listOptions = map[string]ListOption {
+	"a": ListOption {
+		Name: "Link",
+		Value: "a",
+		Selected: true,
+	},
+	"p": ListOption {
+		Name: "Paragraph",
+		Value: "p",
+		Selected: false,
+	},
+	"img": ListOption {
+		Name: "Image",
+		Value: "img",
+		Selected: false,
+	},
+}
+
+func getListOptions() []ListOption {
+	options := make([]ListOption, 0, len(listOptions))
+	for _, value := range listOptions {
+		options = append(options, value)
+	}
+
+	return options
 }
 
 func getPort() string {
@@ -40,21 +66,17 @@ func getPort() string {
 func main() {
 	port := getPort()
 	fmt.Println("Starting server on port", port)
-	http.HandleFunc("/", DisplayRadioButtons)
+	http.HandleFunc("/", DisplayPage)
 	http.HandleFunc("/selected", UserSelected)
 	http.ListenAndServe(port, nil)
 }
 
-func DisplayRadioButtons(w http.ResponseWriter, r *http.Request) {
-	Title := "Which do you prefer?"
-	MyRadioButtons := []RadioButton{
-		RadioButton{"animalselect", "cats", false, false, "Cats"},
-		RadioButton{"animalselect", "dogs", false, false, "Dogs"},
-	}
+func DisplayPage(w http.ResponseWriter, r *http.Request) {
+	Title := "Tag Scrape"
 
 	MyPageVariables := PageVariables{
 		PageTitle: Title,
-		PageRadioButtons: MyRadioButtons,
+		PageListOptions: getListOptions(),
 	}
 
 	t, err := template.ParseFiles("pages/select.html")
@@ -71,12 +93,22 @@ func DisplayRadioButtons(w http.ResponseWriter, r *http.Request) {
 func UserSelected(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
-	youranimal := r.Form.Get("animalselect")
+	url := r.Form.Get("scraping_url")
+	selected := listOptions[r.Form.Get("tags")]
 
-	Title := "Your preferred animal"
+	updateSelected(selected)
+
+	tag := TagCount {
+		Label: selected.Name,
+		Count: Scrape(url, selected.Value),
+	}
+
+	Title := "Tag Scrape"
 	MyPageVariables := PageVariables{
 		PageTitle: Title,
-		Answer: youranimal,
+		SubjectUrl: url,
+		Tag: tag,
+		PageListOptions: getListOptions(),
 	}
 
 	t, err := template.ParseFiles("pages/select.html")
@@ -90,20 +122,12 @@ func UserSelected(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func HomePage(w http.ResponseWriter, r *http.Request) {
-	now := time.Now()
-	HomePageVars := PageVariables{
-		Date: now.Format("2006-02-01"),
-		Time: now.Format("15:04:05"),
-	}
-
-	t, err := template.ParseFiles("pages/homepage.html")
-	if err != nil {
-		log.Print("template parsing error: ", err)
-	}
-
-	err = t.Execute(w, HomePageVars)
-	if err != nil {
-		log.Print("template executing error: ", err)
+func updateSelected(selectedOption ListOption) {
+	for k, v := range listOptions {
+		if k == selectedOption.Value {
+			v.Selected = true
+		} else {
+			v.Selected = false
+		}
 	}
 }
