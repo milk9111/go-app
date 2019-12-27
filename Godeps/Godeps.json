@@ -1,0 +1,6 @@
+{
+	"ImportPath": "github.com/milk9111/go-app",
+	"GoVersion": "go1.10",
+	"GodepVersion": "v80",
+	"Deps": []
+}
